@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Daily Tasks">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Daily Task Monitor</title>
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;color:#111;background:#f5f5f7}
+    *{box-sizing:border-box} body{margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);min-height:100vh}
+    header{position:sticky;top:0;z-index:3;background:rgba(245,245,247,.92);backdrop-filter:blur(18px);padding:16px}
+    .top{display:flex;align-items:center;justify-content:space-between}.top h1{font-size:28px;margin:0}.add{border:0;border-radius:50%;width:42px;height:42px;font-size:28px;background:#007aff;color:white}
+    .summary{margin-top:14px;background:white;border-radius:18px;padding:14px;box-shadow:0 1px 5px #0001}
+    .bar{height:8px;background:#e8e8ed;border-radius:8px;overflow:hidden;margin-top:9px}.fill{height:100%;background:#007aff;width:0}
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px;background:#e5e5ea;padding:4px;border-radius:12px}
+    .tab{border:0;background:transparent;padding:9px 4px;border-radius:9px;font-weight:600}.tab.active{background:white;box-shadow:0 1px 3px #0002}
+    main{padding:0 16px 30px}.search{width:100%;border:0;background:#e8e8ed;border-radius:11px;padding:11px 13px;font-size:16px;margin:12px 0}
+    .task{background:white;border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 1px 4px #0001}.task.done{opacity:.58}.task.done .title{text-decoration:line-through}
+    .row{display:flex;gap:10px;align-items:flex-start}.check{width:25px;height:25px;border:2px solid #aaa;border-radius:50%;background:white;flex:none}.done .check{background:#34c759;border-color:#34c759}
+    .body{flex:1;min-width:0}.title{font-weight:700;font-size:17px}.meta{font-size:13px;color:#666;margin-top:5px}.update{font-size:14px;color:#555;margin-top:8px;white-space:pre-wrap}
+    .pill{display:inline-block;padding:3px 7px;border-radius:8px;background:#eee;margin-right:5px}.high{color:#d70015}.medium{color:#b25000}.low{color:#248a3d}
+    .actions{display:flex;gap:8px;margin-top:11px}.actions button{border:0;border-radius:9px;padding:7px 10px}.edit{background:#e5f1ff;color:#06c}.delete{background:#ffe5e5;color:#c00}
+    .empty{text-align:center;color:#777;padding:60px 20px}
+    dialog{border:0;border-radius:22px;width:min(92vw,520px);padding:0;box-shadow:0 18px 60px #0004}dialog::backdrop{background:#0006}
+    form{padding:18px}.formhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.formhead h2{margin:0}.close{border:0;background:#eee;border-radius:50%;width:32px;height:32px}
+    label{display:block;font-size:13px;color:#666;margin:13px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #d1d1d6;border-radius:10px;font-size:16px;background:white}textarea{min-height:82px;resize:vertical}
+    .save{width:100%;margin-top:18px;padding:12px;border:0;border-radius:11px;background:#007aff;color:white;font-size:17px;font-weight:700}
+    .footer{text-align:center;color:#999;font-size:12px;margin-top:20px}
+  </style>
+</head>
+<body>
+<header>
+  <div class="top"><h1>Daily Tasks</h1><button class="add" id="addBtn" aria-label="Add task">+</button></div>
+  <div class="summary"><strong>Today's Progress</strong><div id="progressText" class="meta">0 of 0 completed</div><div class="bar"><div id="fill" class="fill"></div></div></div>
+  <div class="tabs">
+    <button class="tab active" data-cat="Work">🏢 Work</button>
+    <button class="tab" data-cat="Home">🏠 Home</button>
+    <button class="tab" data-cat="Personal">👤 Personal</button>
+  </div>
+</header>
+<main>
+  <input id="search" class="search" placeholder="Search tasks or updates">
+  <section id="list"></section>
+  <div class="footer">Tasks are stored on this device.</div>
+</main>
+
+<dialog id="editor">
+<form id="form">
+  <div class="formhead"><h2 id="formTitle">Add Task</h2><button type="button" class="close" id="closeBtn">×</button></div>
+  <input type="hidden" id="id">
+  <label>Task</label><input id="title" required placeholder="What do you need to do?">
+  <label>Category</label><select id="category"><option>Work</option><option>Home</option><option>Personal</option></select>
+  <label>Due date</label><input id="date" type="date" required>
+  <label>Time (optional)</label><input id="time" type="time">
+  <label>Priority</label><select id="priority"><option>High</option><option selected>Medium</option><option>Low</option></select>
+  <label>Status</label><select id="status"><option>Pending</option><option>In Progress</option><option>Completed</option></select>
+  <label>Update</label><textarea id="update" placeholder="Add your latest progress/update"></textarea>
+  <button class="save" type="submit">Save Task</button>
+</form>
+</dialog>
+
+<script>
+const KEY='daily-task-monitor-v1';
+let tasks=JSON.parse(localStorage.getItem(KEY)||'[]'), current='Work';
+const $=s=>document.querySelector(s), list=$('#list'), editor=$('#editor');
+function today(){return new Date().toLocaleDateString('en-CA')}
+function save(){localStorage.setItem(KEY,JSON.stringify(tasks));render()}
+function esc(s=''){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function render(){
+ const q=$('#search').value.toLowerCase();
+ const shown=tasks.filter(t=>t.category===current && (!q || t.title.toLowerCase().includes(q)||(t.update||'').toLowerCase().includes(q)))
+   .sort((a,b)=>(a.status==='Completed')-(b.status==='Completed') || (a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+ list.innerHTML=shown.length?shown.map(t=>`<article class="task ${t.status==='Completed'?'done':''}">
+ <div class="row"><button class="check" onclick="toggle('${t.id}')" aria-label="Toggle completed"></button><div class="body">
+ <div class="title">${esc(t.title)}</div><div class="meta">${t.date}${t.time?' · '+t.time:''} · <span class="${t.priority.toLowerCase()}">${t.priority}</span></div>
+ <div class="meta"><span class="pill">${t.status}</span></div>${t.update?`<div class="update"><strong>Update:</strong> ${esc(t.update)}</div>`:''}
+ <div class="actions"><button class="edit" onclick="editTask('${t.id}')">Edit / Update</button><button class="delete" onclick="delTask('${t.id}')">Delete</button></div>
+ </div></div></article>`).join(''):`<div class="empty">No ${current.toLowerCase()} tasks yet.<br>Tap + to add one.</div>`;
+ const tt=tasks.filter(t=>t.date===today()), done=tt.filter(t=>t.status==='Completed').length;
+ $('#progressText').textContent=`${done} of ${tt.length} completed`;
+ $('#fill').style.width=(tt.length?done/tt.length*100:0)+'%';
+}
+function openNew(){
+ $('#form').reset(); $('#id').value=''; $('#category').value=current; $('#date').value=today(); $('#priority').value='Medium'; $('#status').value='Pending'; $('#formTitle').textContent='Add Task'; editor.showModal()
+}
+window.editTask=id=>{const t=tasks.find(x=>x.id===id); if(!t)return; $('#id').value=t.id; $('#title').value=t.title; $('#category').value=t.category; $('#date').value=t.date; $('#time').value=t.time||''; $('#priority').value=t.priority; $('#status').value=t.status; $('#update').value=t.update||''; $('#formTitle').textContent='Edit Task'; editor.showModal()}
+window.toggle=id=>{let t=tasks.find(x=>x.id===id);t.status=t.status==='Completed'?'Pending':'Completed';save()}
+window.delTask=id=>{if(confirm('Delete this task?')){tasks=tasks.filter(x=>x.id!==id);save()}}
+$('#form').addEventListener('submit',e=>{e.preventDefault(); const id=$('#id').value||crypto.randomUUID(); const obj={id,title:$('#title').value.trim(),category:$('#category').value,date:$('#date').value,time:$('#time').value,priority:$('#priority').value,status:$('#status').value,update:$('#update').value.trim()}; const i=tasks.findIndex(x=>x.id===id); if(i>=0)tasks[i]=obj;else tasks.push(obj); current=obj.category; document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.cat===current)); editor.close();save()})
+$('#addBtn').onclick=openNew; $('#closeBtn').onclick=()=>editor.close(); $('#search').oninput=render;
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{current=b.dataset.cat;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));render()});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+render();
+</script>
+</body></html>
