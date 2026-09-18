@@ -1,0 +1,9 @@
+{
+  "name": "Daily Task Monitor",
+  "short_name": "Daily Tasks",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#f5f5f7",
+  "description": "Monitor Work, Home and Personal daily tasks."
+}
