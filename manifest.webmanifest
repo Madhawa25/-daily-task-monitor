@@ -1,9 +1,15 @@
 {
+  "id": "./",
   "name": "Daily Task Monitor",
-  "short_name": "Daily Tasks",
+  "short_name": "Task Monitor",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f5f7",
-  "theme_color": "#f5f5f7",
-  "description": "Monitor Work, Home and Personal daily tasks."
+  "background_color": "#f4f7ff",
+  "theme_color": "#6c5ce7",
+  "description": "Colourful daily task monitoring with calendar, recurring tasks, employee tracking and monthly reports.",
+  "icons": [
+    {"src":"icon-180.png","sizes":"180x180","type":"image/png","purpose":"any maskable"},
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
+  ]
 }

@@ -1,24 +1,21 @@
-DAILY TASK MONITOR — iPhone PWA
+DAILY TASK MONITOR — enhanced iPhone PWA
 
-Files:
-- index.html
-- manifest.webmanifest
-- sw.js
+New features:
+- Daily recurring tasks
+- Completed tasks are automatically removed after 24 hours
+- Employee name field
+- Monthly completed/pending/overdue reports
+- Employee completion report
+- Monthly calendar with task indicators
+- Reminder field and notification support while the app is active; service-worker notifications are supported when invoked
+- Colourful redesigned interface
+- New app icon and iPhone apple-touch-icon
+- Offline caching
 
-Features:
-- Work / Home / Personal tabs
-- Add, edit/update and delete tasks
-- Due date and optional time
-- Priority and status
-- Update notes
-- Search
-- Today's progress
-- Local storage
-- Offline support after first successful load
+Install:
+1. Publish this folder over HTTPS (for example GitHub Pages).
+2. Open the HTTPS site in Safari.
+3. Share > Add to Home Screen.
+4. Open the Home Screen app and allow notifications if prompted.
 
-IMPORTANT:
-Opening index.html directly from the iPhone Files app is not the same as installing a PWA.
-Upload the contents of this folder to any HTTPS static website host, open the HTTPS address in Safari,
-then use Safari's Share menu > Add to Home Screen.
-
-Data is stored in that browser/site's local storage. Clearing Safari website data can erase it.
+Important: true scheduled background reminders at an arbitrary future time require a Web Push subscription plus a push service/server. The current app provides reminder scheduling while the app is active and uses the service worker for notifications. No server credentials are included.
